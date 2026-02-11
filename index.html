@@ -9,7 +9,7 @@
   --bg:#fff4db;
   --panel:#ffffff;
   --panel2:#fff8e9;
-  --historyBg:#eaf6ff; /* 過去の得点の背景色 */
+  --historyBg:#eaf6ff;
   --good:#1f9d63;
   --bad:#d65a5a;
   --line:rgba(0,0,0,.10);
@@ -32,11 +32,11 @@ body{
   padding:16px;
 }
 
-/* ✅ 全体の高さを700pxに固定 */
+/* 全体の高さ700px固定 */
 .phone{
   width:100%;
   max-width:390px;
-  height:700px;              /* ← 指定 */
+  height:700px;
   max-height:700px;
   background:var(--panel);
   border-radius:22px;
@@ -62,12 +62,12 @@ body{
 }
 .toprow small{color:rgba(0,0,0,.55); font-weight:900;}
 
-/* ✅ stage = 700 - top(80) - history(150) = 470 */
+/* stage = 700 - top(80) - history(150) = 470 */
 .stage{
   position:absolute;
   top:80px;
   left:0; right:0;
-  height:470px;            /* ← 700に収めるため */
+  height:470px;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -197,12 +197,12 @@ canvas{
   box-shadow: 0 10px 26px rgba(0,0,0,.08);
 }
 
-/* ✅ 過去の得点：高さ150px */
+/* 過去の得点：高さ150px（過去3回） */
 .bottomHistory{
   position:absolute;
   left:0; right:0;
   bottom:0;
-  height:150px;            /* ← 指定 */
+  height:150px;
   background: var(--historyBg);
   border-top:1px solid var(--line);
   padding:10px 12px 12px;
@@ -218,8 +218,6 @@ canvas{
   letter-spacing:.2px;
   color: rgba(0,0,0,.55);
 }
-
-/* 3件だけなのでスクロールは基本不要（念のためauto） */
 .histRows{
   overflow-y:auto;
   flex:1;
@@ -242,8 +240,8 @@ canvas{
   font-weight:900;
 }
 
-/* 終了オーバーレイ */
-.endOverlay{
+/* オーバーレイ共通 */
+.overlay{
   position:absolute;
   inset:0;
   background: rgba(255,244,219,.78);
@@ -256,8 +254,11 @@ canvas{
   transition: opacity .18s ease;
   z-index:4;
 }
-.endOverlay.show{opacity:1; pointer-events:auto;}
-.endCard{
+.overlay.show{
+  opacity:1;
+  pointer-events:auto;
+}
+.card{
   width: min(340px, 92%);
   border-radius:18px;
   background: rgba(255,255,255,.92);
@@ -266,11 +267,18 @@ canvas{
   padding:16px 16px 14px;
   text-align:center;
 }
-.endCard h2{
+.card h2{
   margin:0 0 8px;
   font-size:18px;
   letter-spacing:.2px;
   font-weight:950;
+}
+.card .sub{
+  margin:0;
+  color: rgba(0,0,0,.55);
+  font-weight:900;
+  font-size:13px;
+  line-height:1.35;
 }
 .endScore{
   font-size:32px;
@@ -278,15 +286,8 @@ canvas{
   letter-spacing:.4px;
   margin:6px 0 10px;
 }
-.endHint{
-  margin:0;
-  color: rgba(0,0,0,.55);
-  font-weight:900;
-  font-size:13px;
-  line-height:1.35;
-}
 
-/* クリック/タップ受け */
+/* クリック/タップ受け（ゲーム中の入力） */
 .taplayer{
   position:absolute;
   inset:0;
@@ -329,11 +330,20 @@ canvas{
     <div class="histRows" id="historyRows"></div>
   </div>
 
-  <div class="endOverlay" id="endOverlay" aria-hidden="true">
-    <div class="endCard">
+  <!-- ✅ スタート前オーバーレイ -->
+  <div class="overlay show" id="startOverlay" aria-hidden="false">
+    <div class="card" id="startCard" role="button" tabindex="0" aria-label="タップでスタート">
+      <h2>タップでスタート</h2>
+      <p class="sub">Space でもOK</p>
+    </div>
+  </div>
+
+  <!-- ✅ 終了オーバーレイ（今のまま＋文言追加／この部分をタッチしないと消えない） -->
+  <div class="overlay" id="endOverlay" aria-hidden="true">
+    <div class="card" id="endCard" role="button" tabindex="0" aria-label="もう一回チャレンジ">
       <h2>おわり！</h2>
       <div class="endScore" id="endScore">0</div>
-      <p class="endHint">タップ / Space でもう一回<br>（履歴は下に残ります）</p>
+      <p class="sub">もう一回チャレンジ</p>
     </div>
   </div>
 
@@ -356,10 +366,14 @@ canvas{
   const historyRows = $('historyRows');
   const taplayer = $('taplayer');
 
+  const startOverlay = $('startOverlay');
+  const startCard = $('startCard');
+
   const endOverlay = $('endOverlay');
+  const endCard = $('endCard');
   const endScore = $('endScore');
 
-  // ✅ 過去3回だけ保持
+  // 過去3回だけ保持
   const history = [];
   const HISTORY_MAX = 3;
 
@@ -385,7 +399,7 @@ canvas{
 
   const GAME_SECONDS = 150;
   const S = {
-    phase: 'title',
+    phase: 'title', // title | play | result
     score: 0,
     time: GAME_SECONDS,
     timer: null,
@@ -575,7 +589,19 @@ canvas{
     }, delayMs);
   }
 
+  function showStartOverlay(){
+    startOverlay.classList.add('show');
+    startOverlay.setAttribute('aria-hidden','false');
+    S.phase = 'title';
+  }
+
+  function hideStartOverlay(){
+    startOverlay.classList.remove('show');
+    startOverlay.setAttribute('aria-hidden','true');
+  }
+
   function startGame(){
+    hideStartOverlay();
     endOverlay.classList.remove('show');
     endOverlay.setAttribute('aria-hidden','true');
 
@@ -614,7 +640,7 @@ canvas{
     if(S.confirmTimer){ clearTimeout(S.confirmTimer); S.confirmTimer = null; }
 
     history.push(S.score);
-    while(history.length > HISTORY_MAX) history.shift();  // ✅ 3回前まで
+    while(history.length > HISTORY_MAX) history.shift();
     renderHistory();
 
     setDogState('idle');
@@ -653,11 +679,7 @@ canvas{
     nextRound(950);
   }
 
-  function onInput(){
-    if(S.phase === 'title' || S.phase === 'result'){
-      startGame();
-      return;
-    }
+  function onGameInput(){
     if(S.phase !== 'play') return;
     if(!S.allowInput) return;
 
@@ -683,26 +705,63 @@ canvas{
     }
   }
 
+  // 初期：スタートオーバーレイ表示
   setBubbleWan(1, true);
   $('big').textContent = 'タップしてスタート';
+  showStartOverlay();
 
-  taplayer.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    onInput();
-  }, {passive:false});
-
-  window.addEventListener('keydown', (e) => {
-    if(e.code === 'Space'){
-      e.preventDefault();
-      onInput();
-    }
-  }, {passive:false});
-
-  endOverlay.addEventListener('pointerdown', (e) => {
+  // ✅ スタートは「オーバーレイ（カード）」をタップしたときだけ
+  startCard.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     startGame();
   }, {passive:false});
+  startCard.addEventListener('keydown', (e) => {
+    if(e.code === 'Enter' || e.code === 'Space'){
+      e.preventDefault();
+      startGame();
+    }
+  });
 
+  // ✅ 終了は「その部分（カード）」をタップしないと次に進めない
+  endCard.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    endOverlay.classList.remove('show');
+    endOverlay.setAttribute('aria-hidden','true');
+    showStartOverlay(); // 次のチャレンジも「タップでスタート」へ
+  }, {passive:false});
+  endCard.addEventListener('keydown', (e) => {
+    if(e.code === 'Enter' || e.code === 'Space'){
+      e.preventDefault();
+      endOverlay.classList.remove('show');
+      endOverlay.setAttribute('aria-hidden','true');
+      showStartOverlay();
+    }
+  });
+
+  // ゲーム中入力（タップ層）
+  taplayer.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    onGameInput();
+  }, {passive:false});
+
+  // Spaceキー：titleのときはスタート、playのときは入力、resultのときは無効（カードを押す仕様）
+  window.addEventListener('keydown', (e) => {
+    if(e.code !== 'Space') return;
+
+    if(S.phase === 'title'){
+      e.preventDefault();
+      startGame();
+      return;
+    }
+    if(S.phase === 'play'){
+      e.preventDefault();
+      onGameInput();
+      return;
+    }
+    // result時は endCard からのみ
+  }, {passive:false});
+
+  // オーバースクロール抑制
   window.addEventListener('touchmove', (e) => e.preventDefault(), {passive:false});
 })();
 </script>
