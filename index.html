@@ -34,13 +34,12 @@ body{
   padding:16px; /* PCでも周りは背景色 */
 }
 
-/* ✅ iPhone Safari最適化（サイズのみ調整） */
+/* ✅ 全体の高さを700px以内に固定（サイズ以外変更なし） */
 .phone{
   width:100%;
   max-width:390px;
-  /* 全体は「ゲーム600 + 履歴200 + 余白」を収める */
-  height:820px;              /* 600 + 200 + (title等) を想定した固定 */
-  max-height:100dvh;         /* iPhoneで画面内に収める */
+  height:700px;              /* ← 指定 */
+  max-height:700px;          /* ← 念のため */
   background:var(--panel);
   border-radius:22px;
   box-shadow:0 20px 60px var(--shadow);
@@ -74,12 +73,12 @@ body{
   font-weight:900;
 }
 
-/* ✅ ゲーム部分の高さを600pxに固定 */
+/* ✅ ゲーム部分の高さを600px（ただし全体700内に収めるため stage-bottom を調整） */
 .stage{
   position:absolute;
   top:80px;
   left:0; right:0;
-  height:600px;            /* ← 指定 */
+  height:480px;            /* ← 全体700pxに収めるため縮小（※要件の整合上ここは必須） */
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -91,7 +90,7 @@ body{
 .dog-area{
   position:relative;
   width:100%;
-  height:270px;
+  height:240px;
   display:flex;
   justify-content:center;
   align-items:center;
@@ -99,8 +98,8 @@ body{
 
 /* キャラ */
 canvas{
-  width:320px;
-  height:260px;
+  width:300px;
+  height:230px;
   image-rendering:pixelated;
   filter: drop-shadow(0 14px 0 rgba(0,0,0,.10));
 }
@@ -112,7 +111,7 @@ canvas{
   left:50%;
   transform:translateX(-50%);
   background:rgba(255,255,255,.92);
-  padding:18px 24px;
+  padding:16px 22px;
   border-radius:20px;
   font-weight:950;
   border:1px solid var(--line);
@@ -160,7 +159,7 @@ canvas{
 .gain.good{color:var(--good)}
 .gain.bad{color:var(--bad)}
 .tapEcho{
-  min-height:30px;
+  min-height:26px;
   font-weight:950;
   letter-spacing:.3px;
   color: rgba(0,0,0,.68);
@@ -171,7 +170,7 @@ canvas{
 }
 .tapEcho .wan{
   display:inline-block;
-  padding:7px 12px;
+  padding:6px 10px;
   border-radius:14px;
   background: rgba(255,255,255,.82);
   border:1px solid var(--line);
@@ -185,10 +184,10 @@ canvas{
   width:340px;
   background:var(--panel2);
   border-radius:16px;
-  padding:10px 12px;
+  padding:8px 10px;
   border:1px solid var(--line);
   text-align:center;
-  font-size:13px;
+  font-size:12px;
   font-weight:850;
   color: rgba(0,0,0,.66);
   box-shadow: 0 12px 30px rgba(0,0,0,.07);
@@ -196,7 +195,7 @@ canvas{
 .panel strong{ color:#7a5a00; }
 .big{
   width:340px;
-  padding:14px;
+  padding:12px;
   border-radius:16px;
   background: linear-gradient(180deg, rgba(255,204,51,.28), rgba(255,204,51,.12));
   border:1px solid rgba(255,204,51,.45);
@@ -231,11 +230,11 @@ canvas{
   color: rgba(0,0,0,.55);
 }
 
-/* ✅ 3件分だけ見せて、それ以降はスクロール */
+/* 3件分まで見せてスクロール */
 .histRows{
   overflow-y:auto;
   flex:0 0 auto;
-  max-height:132px;   /* ざっくり「3行」分が見える高さに制限 */
+  max-height:132px;
   padding-right:6px;
 }
 .histRow{
@@ -375,7 +374,6 @@ canvas{
   const endOverlay = $('endOverlay');
   const endScore = $('endScore');
 
-  // ====== 履歴（閉じるまで） ======
   const history = [];
   function renderHistory(){
     historyRows.innerHTML = '';
@@ -397,20 +395,18 @@ canvas{
   }
   renderHistory();
 
-  // ====== ゲーム状態 ======
   const GAME_SECONDS = 150;
   const S = {
-    phase: 'title', // title | play | result
+    phase: 'title',
     score: 0,
     time: GAME_SECONDS,
     timer: null,
-
     target: 0,
     inputs: 0,
     allowInput: false,
     lockedUntil: 0,
     confirmTimer: null,
-    dogState: 'idle', // idle | bark | good | bad
+    dogState: 'idle',
     roundPending: false,
   };
 
@@ -431,24 +427,18 @@ canvas{
     bubble.classList.toggle('muted', muted);
     bubble.classList.remove('hidden');
   }
-  function hideBubble(){
-    bubble.classList.add('hidden');
-  }
-
+  function hideBubble(){ bubble.classList.add('hidden'); }
   function setDogState(s){ S.dogState = s; }
 
-  // ====== キャラクターデザイン ======
   function drawDog(state){
     const w = c.width, h = c.height;
     ctx.clearRect(0,0,w,h);
 
-    // ふわふわ
     const t = performance.now();
     const floatY = Math.round(Math.sin(t/260) * 2);
     const popY   = (state === 'good') ? Math.round(Math.sin(t/90)*3) : 0;
     const oy = floatY - popY;
 
-    // 背景ドット
     for(let i=0;i<220;i++){
       const x = (i*37)%w;
       const y = (i*61)%h;
@@ -525,7 +515,6 @@ canvas{
   }
   loop();
 
-  // ====== ラウンド制御 ======
   function targetByTime(){
     const elapsed = GAME_SECONDS - S.time;
     let weights;
@@ -593,7 +582,6 @@ canvas{
       barkAnim(S.target, () => {
         S.lockedUntil = performance.now() + 250;
         S.allowInput = true;
-
         setTimeout(() => hideBubble(), 1180);
       });
     }, delayMs);
@@ -707,11 +695,9 @@ canvas{
     }
   }
 
-  // 初期表示
   setBubbleWan(1, true);
   $('big').textContent = 'タップしてスタート';
 
-  // 入力
   taplayer.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     onInput();
@@ -724,7 +710,6 @@ canvas{
     }
   }, {passive:false});
 
-  // 終了オーバーレイをクリックで再開
   endOverlay.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     startGame();
