@@ -9,7 +9,7 @@
   --bg:#fff4db;      /* 薄いクリーム（左右余白） */
   --panel:#ffffff;
   --panel2:#fff8e9;
-  --historyBg:#eaf6ff; /* ← 過去10回の背景色 */
+  --historyBg:#eaf6ff; /* 過去10回の背景色 */
   --ink:#2b2b2b;
   --muted:#6b6b6b;
   --good:#1f9d63;
@@ -34,12 +34,13 @@ body{
   padding:16px; /* PCでも周りは背景色 */
 }
 
-/* ✅ iPhone Safari最適化（サイズのみ変更） */
+/* ✅ iPhone Safari最適化（サイズのみ調整） */
 .phone{
   width:100%;
   max-width:390px;
-  height:100dvh;          /* Safariのアドレスバー伸縮に追従 */
-  max-height:900px;       /* ゲーム画面（全体）900px以内 */
+  /* 全体は「ゲーム600 + 履歴200 + 余白」を収める */
+  height:820px;              /* 600 + 200 + (title等) を想定した固定 */
+  max-height:100dvh;         /* iPhoneで画面内に収める */
   background:var(--panel);
   border-radius:22px;
   box-shadow:0 20px 60px var(--shadow);
@@ -73,12 +74,12 @@ body{
   font-weight:900;
 }
 
-/* メイン（履歴分を除いた“ゲーム画面”） */
+/* ✅ ゲーム部分の高さを600pxに固定 */
 .stage{
   position:absolute;
   top:80px;
   left:0; right:0;
-  bottom:200px;     /* 下履歴ぶん確保 */
+  height:600px;            /* ← 指定 */
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -92,11 +93,11 @@ body{
   width:100%;
   height:270px;
   display:flex;
-  justify-content:center;   /* センター */
-  align-items:center;       /* センター */
+  justify-content:center;
+  align-items:center;
 }
 
-/* キャラ（解像度UP） */
+/* キャラ */
 canvas{
   width:320px;
   height:260px;
@@ -104,7 +105,7 @@ canvas{
   filter: drop-shadow(0 14px 0 rgba(0,0,0,.10));
 }
 
-/* 吹き出し（150%） */
+/* 吹き出し */
 .bubble{
   position:absolute;
   top:-12px;
@@ -148,8 +149,6 @@ canvas{
   align-items:center;
   gap:10px;
 }
-
-/* 獲得点表示：ボタン上 */
 .gain{
   height:24px;
   font-weight:950;
@@ -160,8 +159,6 @@ canvas{
 .gain.show{opacity:1; transform:translateY(-2px)}
 .gain.good{color:var(--good)}
 .gain.bad{color:var(--bad)}
-
-/* タップ回数表示：ボタン上 */
 .tapEcho{
   min-height:30px;
   font-weight:950;
@@ -184,7 +181,6 @@ canvas{
   text-overflow: ellipsis;
   white-space:nowrap;
 }
-
 .panel{
   width:340px;
   background:var(--panel2);
@@ -198,8 +194,6 @@ canvas{
   box-shadow: 0 12px 30px rgba(0,0,0,.07);
 }
 .panel strong{ color:#7a5a00; }
-
-/* タップボタン */
 .big{
   width:340px;
   padding:14px;
@@ -215,11 +209,12 @@ canvas{
   box-shadow: 0 10px 26px rgba(0,0,0,.08);
 }
 
-/* 下部履歴（スクロール可） */
+/* ✅ 過去10回：高さ200px固定 */
 .bottomHistory{
   position:absolute;
-  bottom:0; left:0; right:0;
-  height:200px;
+  left:0; right:0;
+  bottom:0;
+  height:200px;            /* ← 指定 */
   background: var(--historyBg);
   border-top:1px solid var(--line);
   padding:10px 12px 12px;
@@ -235,9 +230,12 @@ canvas{
   letter-spacing:.2px;
   color: rgba(0,0,0,.55);
 }
+
+/* ✅ 3件分だけ見せて、それ以降はスクロール */
 .histRows{
   overflow-y:auto;
-  flex:1;
+  flex:0 0 auto;
+  max-height:132px;   /* ざっくり「3行」分が見える高さに制限 */
   padding-right:6px;
 }
 .histRow{
@@ -257,7 +255,7 @@ canvas{
   font-weight:900;
 }
 
-/* ゲーム終了を分かりやすく（オーバーレイ） */
+/* 終了オーバーレイ */
 .endOverlay{
   position:absolute;
   inset:0;
@@ -596,7 +594,6 @@ canvas{
         S.lockedUntil = performance.now() + 250;
         S.allowInput = true;
 
-        // 吹き出し表示（0.5秒長く）
         setTimeout(() => hideBubble(), 1180);
       });
     }, delayMs);
@@ -666,7 +663,7 @@ canvas{
     showGain(`+${add}`, 'good');
 
     setTimeout(() => setDogState('idle'), 260);
-    nextRound(900); // 回答後、次まで一拍
+    nextRound(900);
   }
 
   function failRound(){
@@ -677,7 +674,7 @@ canvas{
     showGain('0', 'bad');
 
     setTimeout(() => setDogState('idle'), 280);
-    nextRound(950); // 失敗時も余韻
+    nextRound(950);
   }
 
   function onInput(){
