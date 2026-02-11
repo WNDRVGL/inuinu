@@ -6,12 +6,10 @@
 <title>いぬっピー</title>
 <style>
 :root{
-  --bg:#fff4db;      /* 薄いクリーム（左右余白） */
+  --bg:#fff4db;
   --panel:#ffffff;
   --panel2:#fff8e9;
-  --historyBg:#eaf6ff; /* 過去10回の背景色 */
-  --ink:#2b2b2b;
-  --muted:#6b6b6b;
+  --historyBg:#eaf6ff; /* 過去の得点の背景色 */
   --good:#1f9d63;
   --bad:#d65a5a;
   --line:rgba(0,0,0,.10);
@@ -31,15 +29,15 @@ body{
   user-select:none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  padding:16px; /* PCでも周りは背景色 */
+  padding:16px;
 }
 
-/* ✅ 全体の高さを700px以内に固定（サイズ以外変更なし） */
+/* ✅ 全体の高さを700pxに固定 */
 .phone{
   width:100%;
   max-width:390px;
   height:700px;              /* ← 指定 */
-  max-height:700px;          /* ← 念のため */
+  max-height:700px;
   background:var(--panel);
   border-radius:22px;
   box-shadow:0 20px 60px var(--shadow);
@@ -56,29 +54,20 @@ body{
   background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,0));
   z-index:3;
 }
-.title{
-  font-weight:950;
-  font-size:16px;
-  letter-spacing:.2px;
-}
+.title{font-weight:950; font-size:16px; letter-spacing:.2px;}
 .toprow{
-  display:flex;
-  justify-content:space-between;
+  display:flex; justify-content:space-between;
   margin-top:6px;
-  font-weight:950;
-  font-size:14px;
+  font-weight:950; font-size:14px;
 }
-.toprow small{
-  color:rgba(0,0,0,.55);
-  font-weight:900;
-}
+.toprow small{color:rgba(0,0,0,.55); font-weight:900;}
 
-/* ✅ ゲーム部分の高さを600px（ただし全体700内に収めるため stage-bottom を調整） */
+/* ✅ stage = 700 - top(80) - history(150) = 470 */
 .stage{
   position:absolute;
   top:80px;
   left:0; right:0;
-  height:480px;            /* ← 全体700pxに収めるため縮小（※要件の整合上ここは必須） */
+  height:470px;            /* ← 700に収めるため */
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -104,7 +93,7 @@ canvas{
   filter: drop-shadow(0 14px 0 rgba(0,0,0,.10));
 }
 
-/* 吹き出し */
+/* 吹き出し（150%） */
 .bubble{
   position:absolute;
   top:-12px;
@@ -208,12 +197,12 @@ canvas{
   box-shadow: 0 10px 26px rgba(0,0,0,.08);
 }
 
-/* ✅ 過去10回：高さ200px固定 */
+/* ✅ 過去の得点：高さ150px */
 .bottomHistory{
   position:absolute;
   left:0; right:0;
   bottom:0;
-  height:200px;            /* ← 指定 */
+  height:150px;            /* ← 指定 */
   background: var(--historyBg);
   border-top:1px solid var(--line);
   padding:10px 12px 12px;
@@ -230,11 +219,10 @@ canvas{
   color: rgba(0,0,0,.55);
 }
 
-/* 3件分まで見せてスクロール */
+/* 3件だけなのでスクロールは基本不要（念のためauto） */
 .histRows{
   overflow-y:auto;
-  flex:0 0 auto;
-  max-height:132px;
+  flex:1;
   padding-right:6px;
 }
 .histRow{
@@ -268,10 +256,7 @@ canvas{
   transition: opacity .18s ease;
   z-index:4;
 }
-.endOverlay.show{
-  opacity:1;
-  pointer-events:auto;
-}
+.endOverlay.show{opacity:1; pointer-events:auto;}
 .endCard{
   width: min(340px, 92%);
   border-radius:18px;
@@ -339,8 +324,8 @@ canvas{
     </div>
   </div>
 
-  <div class="bottomHistory" aria-label="過去10回のスコア">
-    <h3>過去10回（このブラウザを閉じるまで）</h3>
+  <div class="bottomHistory" aria-label="過去のスコア">
+    <h3>過去3回（このブラウザを閉じるまで）</h3>
     <div class="histRows" id="historyRows"></div>
   </div>
 
@@ -374,7 +359,10 @@ canvas{
   const endOverlay = $('endOverlay');
   const endScore = $('endScore');
 
+  // ✅ 過去3回だけ保持
   const history = [];
+  const HISTORY_MAX = 3;
+
   function renderHistory(){
     historyRows.innerHTML = '';
     if(history.length === 0){
@@ -626,7 +614,7 @@ canvas{
     if(S.confirmTimer){ clearTimeout(S.confirmTimer); S.confirmTimer = null; }
 
     history.push(S.score);
-    while(history.length > 10) history.shift();
+    while(history.length > HISTORY_MAX) history.shift();  // ✅ 3回前まで
     renderHistory();
 
     setDogState('idle');
